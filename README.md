@@ -5,8 +5,6 @@ packaged for Swift Package Manager so the
 [deepecho-mobile-app](https://github.com/Deepecho-org/deepecho-mobile-app) does not
 carry a vendor binary in its own history.
 
-This repository is private because the Leltek SDK is not ours to redistribute.
-
 ## Contents
 
 | Path | What it is |
@@ -34,7 +32,7 @@ whether Leltek works — that requires a physical probe and a device build.
 
 ```swift
 // Tuist/Package.swift
-.package(url: "git@github.com:zikossnake/leltek-sdk.git", exact: "1.0.0"),
+.package(url: "https://github.com/zikossnake/leltek-sdk.git", exact: "1.0.0"),
 ```
 
 ```swift
