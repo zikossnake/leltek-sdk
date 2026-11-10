@@ -1,0 +1,694 @@
+wr 26C 01	# reg_hw_fan_ctl=1
+wr 252 00	# reg_afe_adc_on[3:0]=0
+#wr 242 FF 00
+#wr 36 01	# reg_tx_pattern_simple_angle=1
+
+# power on/enable RX for lt711
+wr 3CA 01	# en_dvdd_1v2
+wait 20		# wait for 20ms
+wr 3F1 01	# rx_pwr_en, en_dvdd_1v8
+wait 20		# wait for 20ms
+wr 3CA 03	# en_afe_clk
+wait 20		# wait for 20ms
+
+# power on/enable TX for lt711
+wr 3F0 01	# tx_pwr_en
+wait 20
+
+# power on TX high voltage
+wr 59 01
+wait 20
+wr 59 03
+wait 20
+
+# disable afe reset
+wr 5A 08
+wait 20
+
+wr F4 00    # clock stop
+wr FC 00    # no clock stop, keep dynamic tmod0 to fix the peak current, shutdown AFE
+wr FA 00	# no early reg_afe_shdn_dis_fire, 01: TCC1 current = 1.5A
+wr A1 FF	# afe_spi_en
+
+####################################################
+# ST100 initialization
+####################################################
+### disable auto-detect DIFF/SE
+wr 04 04 00 00 00 54 08 10 10
+
+### enable LNA 5832LP mode
+wr 04 00 00 00 00 50 08 10 10  # 5832LP mode
+wr 04 D0 00 00 00 82 08 10 10  # enable HPF1, Rt open, At open
+
+### enable HPF
+#wr 04 90 44 00 00 82 08 10 10  # enable HPF
+
+### enable HPF4
+wr 04 42 00 00 00 80 08 10 10
+
+### Fine-tune AAF conern frequency
+wr 04 F4 01 00 00 98 08 10 10	# rc_autocal (50M)
+wr 04 01 40 00 00 96 08 10 10	# rc_autocal
+#wr 04 63 2D 00 00 99 08 10 10	# rc_manulcal
+#wr 04 15 04 00 00 9A 08 10 10	# rc_manulcal
+
+### enable internal_Rt / disable ActiveZ
+#wr 04 C0 44 00 00 82 08 10 10  # default
+#wr 04 C2 40 00 00 82 08 10 10  # en_Rt200_open
+#wr 04 C2 41 00 00 82 08 10 10  # en_Rt200_800
+#wr 04 C2 42 00 00 82 08 10 10  # en_Rt200_400
+#wr 04 C2 43 00 00 82 08 10 10  # en_Rt200_270
+#wr 04 C2 44 00 00 82 08 10 10  # en_Rt200_200
+#wr 04 C2 45 00 00 82 08 10 10  # en_Rt200_160
+#wr 04 C2 46 00 00 82 08 10 10  # en_Rt200_100
+#wr 04 C2 47 00 00 82 08 10 10  # en_Rt200_050
+
+### enable AT
+#wr 04 C8 44 00 00 82 08 10 10  # default
+
+### enable BF mode
+#wr 04 04 30 00 00 A0 08 10 01
+#wr 04 04 20 00 00 A0 08 10 02
+#wr 04 00 91 00 00 A1 08 10 10
+
+####################################################
+# afe5832 initialization
+####################################################
+### Write all bits marked 1 in all the register maps
+wr 04 10 00 00 00 03 08 10 10
+
+### initialize PLL
+wr 04 00 80 00 00 41 08 10 10	# a41: b15= pllrst1
+wr 04 00 80 00 00 42 08 10 10	# a41: b15= pllrst2
+wait 2		# wait for 2ms
+wr 04 00 00 00 00 41 08 10 10	# a41: b15= pllrst1
+wr 04 00 00 00 00 42 08 10 10	# a41: b15= pllrst2
+wait 2		# wait for 2ms
+
+### afe_trig
+wr 341 05   # reg_afe_trig_start, one pulse to afe
+
+####################################################
+# afe setting   
+####################################################
+### Enable to program ADC, VGA register map
+wr 04 00 00 00 00 00 08 10 10	# b4=DTGC_WR_EN; b1=REG_READ_EN; b0= software reset
+
+##### ADC register map #####
+### addr=1
+#b15	: Must write 0
+#b14	: LVDS_RATE_2X, 0=1x, 1=2x
+#b13-1	: Must write 0
+#b0		: GLOBAL_PDN, 0=ADC in normal mode, 1=ADC in power-down mode
+wr 04 00 00 00 00 01 08 10 10
+
+### addr=2
+#b15-13  : PAT_MODES_FCLK
+#b12     : LOW_LATENCY_EN, 0=default latency, 1=bypassed digital features
+#b11     : AVG_EN, 0=no averaging, 1=enable averaging
+#b10     : SEL_PRBS_PAT_FCLK
+#b9-7    : PAT_MODES
+#b6      : SEL_PRBS_PAT_GBL
+#b5-0    : OFFSET_CORR_DELAY_FROM_TX_TRIG[5:0]
+#wr 04 00 10 00 00 02 08 10 10	# b9-7=000=lvds normal mode, low_latency_en
+wr 04 00 00 00 00 02 08 10 10	# b9-7=000=lvds normal mode
+#wr 04 80 00 00 00 02 08 10 10	# b9-7=001=lvds sync mode
+#wr 04 00 02 00 00 02 08 10 10	# b9-7=100=lvds test mode all 1
+#wr 04 80 03 00 00 02 08 10 10	# b9-7=111=lvds test mode ramp
+
+### addr=3
+#b15-13  : SER_DATA_RATE, 000=12x, 001=14x, 100=16x, 011=10x
+#b12     : DIG_GAIN_EN, 0=disable, 1=enable
+#b11     : must write 0
+#b10-9   : OFFSET_CORR_DELAY_FROM_TX_TRIG[7:6]
+#b8      : DIG_OFFSET_EN
+#b7-0    : must write '00010000'
+#wr 04 10 60 00 00 03 08 10 10	#b15-13=011=10bx50Mhz, DIG_OFFSET_EN=0, DIG_GAIN_EN=0
+wr 04 10 00 00 00 03 08 10 10	#b15-13=000=12bx40Mhz, DIG_OFFSET_EN=0, DIG_GAIN_EN=0
+#wr 04 10 01 00 00 03 08 10 10	#b15-13=000=12bx40Mhz, DIG_OFFSET_EN=1, DIG_GAIN_EN=0
+#wr 04 10 11 00 00 03 08 10 10	#b15-13=000=12bx40Mhz, DIG_OFFSET_EN=1, DIG_GAIN_EN=1
+
+### addr=4
+#b15     : OFFSET_REMOVAL_SELF
+#b14     : OFFSET_REMOVAL_START_SEL
+#b13     : OFFSET_REMOVAL_START_MANUAL
+#b12-9   : AUTO_OFFSET_REMOVAL_ACC_CYCLES
+#b8      : PAT_SELECT_IND
+#b7-5    : [PRBS_SYNC, PRBS_MODE, PRBS_EN]
+#b4      : MSB_FIRST
+#b3      : DATA_FORMAT
+#b2      : must write 0
+#b1-0    : ADC_RES, 00=12bit, 11=10bit, 01,10=Do not use
+#wr 04 13 00 00 00 04 08 10 10	#b4=1:MSB, b1-0=11=ADC10bit
+wr 04 10 00 00 00 04 08 10 10	#b4=1:MSB, b1-0=00=ADC12bit
+
+### addr=5
+#b15-0   : Custom_Pattern
+wr 04 00 00 00 00 05 08 10 10
+
+### addr=7
+#b15-7  : AUTO_OFFSET_REMOVAL_RD_CH_SEL
+#b10-1  : must write 0
+#b0     : CHOPPER_EN
+wr 04 00 00 00 00 07 08 10 10
+
+### addr=B
+#b15-12 : must write 0
+#b11    : EN_DITHER
+#b10-0  : must write 0
+wr 04 00 00 00 00 0B 08 10 10
+
+### addr=D to 14
+#b15-11  : GAIN_ADCxo/xe
+#b10     : must write 0
+#b9-0    : OFFSET_ADC_xo/xe
+wr 04 00 00 00 00 0D 08 10 10
+wr 04 00 00 00 00 0E 08 10 10
+wr 04 00 00 00 00 0F 08 10 10
+wr 04 00 00 00 00 10 08 10 10
+wr 04 00 00 00 00 11 08 10 10
+wr 04 00 00 00 00 12 08 10 10
+wr 04 00 00 00 00 13 08 10 10
+wr 04 00 00 00 00 14 08 10 10
+
+### addr 15/2d for digital HPF
+#b15-6	: LVDS test pattern related, daulft 'b0.
+#b5		: HPF_ROUND_EN_ADC1-8/9-16, 1:mapping to the ADC resolution
+#b4-1	: HPF_CORNER_ADC1-4/9-12, 
+#b0		: DIG_HPF_EN_ADC1-4/9-12
+
+### addr 21/39 for digital HPF
+#15-6	: LVDS test pattern related, daulft 'b0.
+#b5		: must write 0.
+#b4-1	: HPF_CORNER_ADC5-8/13-16
+#b0		: DIG_HPF_EN_ADC5-8/13-16
+#fcut=2780kHz when Fsamp=40MSPS, fcut=3480kHz when Fsamp=50MSPS.
+wr 04 25 00 00 00 15 08 10 10
+wr 04 05 00 00 00 21 08 10 10
+wr 04 25 00 00 00 2d 08 10 10
+wr 04 05 00 00 00 39 08 10 10
+
+#fcut=1490kHz when Fsamp=40MSPS, fcut=1860kHz when Fsamp=50MSPS.
+#wr 04 27 00 00 00 15 08 10 10	
+#wr 04 07 00 00 00 21 08 10 10
+#wr 04 27 00 00 00 2d 08 10 10
+#wr 04 07 00 00 00 39 08 10 10
+
+#fcut=738kHz when Fsamp=40MSPS, fcut=230kHz when Fsamp=50MSPS.
+#wr 04 29 00 00 00 15 08 10 10	
+#wr 04 09 00 00 00 21 08 10 10
+#wr 04 29 00 00 00 2d 08 10 10
+#wr 04 09 00 00 00 39 08 10 10
+
+#disable digital HPF
+#wr 04 00 00 00 00 15 08 10 10	
+#wr 04 00 00 00 00 21 08 10 10
+#wr 04 00 00 00 00 2d 08 10 10
+#wr 04 00 00 00 00 39 08 10 10
+
+### addr=17
+#b15-8  : must write 0
+#b7-5   : PAT_LVDS3
+#b4-2   : PAT_LVDS4
+#b1-0   : must write 0
+wr 04 00 00 00 00 17 08 10 10
+
+### addr=18
+#b15-12 : must write 0
+#b11-8  : PDN_LVDS4/3/2/1
+#b7-4   : must write 0
+#b3-0   : INVERT_LVDS4/3/2/1
+wr 04 00 00 00 00 18 08 10 10
+
+### addr=19-20
+#b15-11  : GAIN_ADC5o/5e/6o/6e/7o/7e/8o/8e
+#b10     : must write 0
+#b9-0    : OFFSET_ADC_5o/5e/6o/6e/7o/7e/8o/8e
+wr 04 00 00 00 00 19 08 10 10
+wr 04 00 00 00 00 1A 08 10 10
+wr 04 00 00 00 00 1B 08 10 10
+wr 04 00 00 00 00 1C 08 10 10
+wr 04 00 00 00 00 1D 08 10 10
+wr 04 00 00 00 00 1E 08 10 10
+wr 04 00 00 00 00 1F 08 10 10
+wr 04 00 00 00 00 20 08 10 10
+
+### addr=23
+#b15-8  : must write 0
+#b7-5   : PAT_LVDS7
+#b4-2   : PAT_LVDS8
+#b1-0   : must write 0
+wr 04 00 00 00 00 23 08 10 10
+
+### addr=24
+#b15-12 : must write 0
+#b11-8  : PDN_LVDS8/7/6/5
+#b7-4   : must write 0
+#b3-0   : INVERT_LVDS8/7/6/5
+wr 04 00 00 00 00 24 08 10 10
+
+### addr=25-2C
+#b15-11  : GAIN_ADC9o/9e/10o/10e/11o/11e/12o/12e
+#b10     : must write 0
+#b9-0    : OFFSET_ADC_9o/9e/10o/10e/11o/11e/12o/12e
+wr 04 00 00 00 00 25 08 10 10
+wr 04 00 00 00 00 26 08 10 10
+wr 04 00 00 00 00 27 08 10 10
+wr 04 00 00 00 00 28 08 10 10
+wr 04 00 00 00 00 29 08 10 10
+wr 04 00 00 00 00 2A 08 10 10
+wr 04 00 00 00 00 2B 08 10 10
+wr 04 00 00 00 00 2C 08 10 10
+
+### addr=2F
+#b15-8  : must write 0
+#b7-5   : PAT_LVDS11
+#b4-2   : PAT_LVDS12
+#b1-0   : must write 0
+wr 04 00 00 00 00 2F 08 10 10
+
+### addr=30
+#b15-12 : must write 0
+#b11-8  : PDN_LVDS12/11/10/9
+#b7-4   : must write 0
+#b3-0   : INVERT_LVDS12/11/10/9
+wr 04 00 00 00 00 30 08 10 10
+
+### addr=31-38
+#b15-11  : GAIN_ADC13o/13e/14o/14e/15o/15e/16o/16e
+#b10     : must write 0
+#b9-0    : OFFSET_ADC_13o/13e/14o/14e/15o/15e/16o/16e
+wr 04 00 00 00 00 31 08 10 10
+wr 04 00 00 00 00 32 08 10 10
+wr 04 00 00 00 00 33 08 10 10
+wr 04 00 00 00 00 34 08 10 10
+wr 04 00 00 00 00 35 08 10 10
+wr 04 00 00 00 00 36 08 10 10
+wr 04 00 00 00 00 37 08 10 10
+wr 04 00 00 00 00 38 08 10 10
+
+### addr=3B
+b15-8   : must write 0
+b7-5    : PAT_LVDS15
+b4-2    : PAT_LVDS16
+b1-0    : must write 0
+wr 04 00 00 00 00 3B 08 10 10
+
+### addr=3C
+#b15-12 : must write 0
+#b11-8  : PDN_LVDS16/15/14/13
+#b7-4   : must write 0
+#b3-0   : INVERT_LVDS16/15/14/13
+wr 04 00 00 00 00 3C 08 10 10
+
+### addr=43
+#b15-5  : must write 0
+#b4-0   : LVDS_DCLK_DELAY_PROG
+#wr 04 12 00 00 00 43 08 10 10
+wr 04 00 00 00 00 43 08 10 10
+
+##### VCA register map #####
+### addr c6
+#b15-4	: must write 0; 
+#b3		: PDWN_FILTER, 0=default, 1= LPF in VCA die is powered down 
+#b2		: PDWN_LNA, 0=default, 1=LNA in VCA is powered down 
+#b1		: GBL_PDWN, 0=normal mode
+#b0		: FAST_PDWN, 0=normal mode
+#wr 04 00 00 00 00 C6 08 10 10
+
+### addr c7
+#b15-12	: must write 0; 
+#b11-10	: LNA_HPF_PROG; 00=75kHz, 01=150kHz
+#b9	    : LNA_HPF_DIS; 0=LNA HPF enalbed, 1=LNA HPF disabled.
+#b8-7	: LPF_PROG, 00=15MHz in HP/ULP mode,  7.5MHz in LP mode
+#                   01=10MHz in HP/ULP mode,  5.0MHz in LP mode
+#                   10=25MHz in HP/ULP mode, 12.5MHz in LP mode
+#                   11=20MHz in HP/ULP mode, 10.0MHz in LP mode
+#b6-0	: must write 0; 
+#wr 04 80 05 00 00 C7 08 10 10	# LNA_HPF=150kHz, LPF=20MHz for HP/ULP, 10MHz for LP 
+#wr 04 80 01 00 00 C7 08 10 10	# LNA_HPF= 75kHz, LPF=20MHz for HP/ULP, 10MHz for LP
+wr 04 00 04 00 00 C7 08 10 10	# LNA_HPF=150kHz, LPF=15MHz for HP/ULP, 7.5MHz for LP
+#wr 04 80 04 00 00 C7 08 10 10	# LNA_HPF=150kHz, LPF=10MHz for HP/ULP, 5.0MHz for LP
+
+####### Power Modes ######
+#Low power, set HIGH_POWER = 0
+#High power, set HIGH_POWER = 1
+#Ultra low power, set HIGH_POWER = 1 and ULP_Bx = 1;
+
+### addr c8
+#b15-7	: must write 0;
+#b6     : ULP_B0; 0=Ultra low-power mode disabled, 1=Ultra-low power mode enabled
+#b5     : must write 0;
+#b4     : ULP_B1; 0=Ultra low-power mode disabled, 1=Ultra-low power mode enabled
+#b3-0	: must write 0;
+#wr 04 00 00 00 00 C8 08 10 10	# disable Ultra low-power mode
+wr 04 50 00 00 00 C8 08 10 10	# enable Ultra low-power mode
+
+### addr CC
+#b15-8	: Must write 0
+#b7		: ULP_B2, 0=Ultra low-power mode disabled, 1=Ultra-low power mode enabled
+#b6-0	: Must write 0
+#wr 04 00 00 00 00 CC 08 10 10	# disable Ultra low-power mode
+wr 04 80 00 00 00 CC 08 10 10	# enable Ultra low-power mode
+
+### addr CD
+#b15-12	: Must write 0
+#b11	: ULP_B3, 0=Ultra low-power mode disabled, 1=Ultra-low power mode enabled
+#b10-8	: Must write 0
+#b7		: ULP_B4, 0=Ultra low-power mode disabled, 1=Ultra-low power mode enabled
+#b6-0	: Must write 0
+#wr 04 00 00 00 00 CD 08 10 10	# disable Ultra low-power mode
+wr 04 80 08 00 00 CD 08 10 10	# enable Ultra low-power mode
+
+### addr D0
+#b15-9	: Must write 0
+#b8-1	: ULP_B5 - ULP_B12, , 0=Ultra low-power mode disabled, 1=Ultra-low power mode enabled
+#b0		: Must write 0
+#wr 04 00 00 00 00 D0 08 10 10	# disable Ultra low-power mode
+wr 04 FE 01 00 00 D0 08 10 10	# enable Ultra low-power mode
+
+### addr D8
+#b15-11	: Must write 0
+#b10	: ULP_B13, 
+#b9-0	: Must write 0
+#wr 04 00 00 00 00 D8 08 10 10	# disable Ultra low-power mode
+wr 04 00 04 00 00 D8 08 10 10	# enable Ultra low-power mode
+
+### addr DB
+#b15-5	: Must write 0
+#b4		: ULP_B14
+#b3-0	: Must write 0
+#wr 04 00 00 00 00 DB 08 10 10	# disable Ultra low-power mode
+wr 04 10 00 00 00 DB 08 10 10	# enable Ultra low-power mode
+
+### addr E5
+#b15-10	: Must write 0
+#b9		: ULP_B15
+#b8-1	: Must write 0
+#b0		: HIGH_POWER, 0=low power mode, 1=Ultra low-power mode
+#wr 04 00 00 00 00 E5 08 10 10	# low power mode
+#wr 04 01 00 00 00 E5 08 10 10	# high power mode 
+wr 04 01 02 00 00 E5 08 10 10	# Ultra low power mode
+
+### Enable to program DTGC register map ###
+### addr 0
+wr 04 10 00 00 00 00 08 10 10	# b4=DTGC_WR_EN; b1=read; b0= software reset
+
+#set AFE ramp tgc mode
+#wr 04 80 46 00 00 B6 08 10 10 # ramp, INP_RES=200
+wr 04 00 40 00 00 B6 08 10 10 # ramp, INP_RES=50
+
+#TGC_PROFILE0 (for Bmode)
+wr 04 9F 30 00 00 A1 08 10 10
+wr 04 FF 04 00 00 A2 08 10 10
+wr 04 00 00 00 00 A3 08 10 10
+wr 04 00 00 00 00 A4 08 10 10
+wr 04 00 00 00 00 A5 08 10 10
+
+#TGC_PROFILE1 (for Color)
+wr 04 9F 38 00 00 A6 08 10 10
+wr 04 FF 03 00 00 A7 08 10 10
+wr 04 00 00 00 00 A8 08 10 10
+wr 04 00 00 00 00 A9 08 10 10
+wr 04 00 00 00 00 AA 08 10 10
+
+##################################################
+# clock/power related register setting
+##################################################
+wr F0 00    # clk_adc, 00=50MHz, 01=25MHz
+
+wr F4 AF    # clock stop
+wr F5 0B    # afe_power_ctrl
+wr FC 9E    # PDN_FAST
+
+#wr 48 04 04 # idelay_value
+#wr 4A 04 04 # idelay_value
+wr 48 0B 0B # idelay_value
+wr 4A 0B 0B # idelay_value
+
+wr F6 15    # afe_power_ctrl, 50MHz
+#wr F6 35    # afe_power_ctrl, 25MHz
+
+wr 382 2F
+wr 340 01
+
+##################################################
+# control : prf/tgc related register setting
+##################################################
+wr 38 00	# reg_xdc_type, 00:linear; 01:conv; 11:phased
+wr 2C A0	# afe prf
+wr 2D 11	# cf prf, 02; 04; 06; 09
+wr 2E 01	# bmode prf, 04; 09;
+wr 250 20
+
+#wr 2F 04	# tx_start delay to more 3us for lt702/3
+wr 16 A4 00	# b-mode tgc interval
+wr 18 A4 00	# b-mode tgc interval
+wr 3B 01	# b1=sidecomp for bf data
+wr 3F 50
+wr 32 00
+#wr 95 00	# 0: adc start from lvds async delay one more T
+#wr 206 1	# reg_trx_chk_rxcyc = 1
+wr 351 05
+
+##################################################
+# bmode related register setting
+##################################################
+#wr 81 10
+#wr 8A 22	# for max2082 adc12b
+
+##################################################
+# cf related register setting
+##################################################
+wr 80 00	# B/C mode
+wr 88 90	# wall filter, 81
+wr 8B 30	# b[5:4] = zgating, b[3:0] = cf_cntdop1(accumulate firing)
+#wr 8C 04	# b2= rx hpf, b1=cf apo, b0=bmode apo, b4=slow apo(for convex)
+
+wr A8 00 10 00 00	# cf amp sensitivity shreshold
+wr AC 20 00 00 00	# cf auto sensitivity shreshold
+wr B0 20			# b[5] ref_cf_amp_check
+#wr D0 D4 01 28 03	# adc hpf for cf a2/a3 fc=0.02*50M=1M
+wr D0 E0 00 00 00	# adc hpf for cf a2/a3 fc=0.02*50M=1M, 1st order
+wr D8 D4 01 28 03	# adc hpf for bmode a2/a3 fc=0.02*50M=1M
+wr D4 90 01 5C 03	# wf a2/a3 fc=0.05
+
+wr E0 03	# tx_pattern for pw, imgblock
+wr E2 1F	# tx_pattern for pw, tx table 31
+wr E3 36	# tx_pattern for pw, 3=4cycles; e=18cycles;c=360ns
+wr E4 00	# tx_pattern for cf, angle=0
+wr E5 36	# tx_pattern for cf, 3=4cycles; e=18cycles;c=360ns
+wr E6 36	# rx_pattern for cf, 6=10cycles;c=200ns
+wr E8 07	# reg_tx_pattern_bmode_freq_en=1, reg_tx_pattern_bmode_cycles_en=1, reg_tx_pattern_bmode_angle_en=1
+wr EA 00	# B mode tx 1 cycle
+wr EB 23
+wr EC 03
+wr ED 03
+wr 33 E4 02
+
+##################################################
+# host related register setting
+##################################################
+wr 3D FF 00		# reg_bmod_len??
+wr 55 01		# reg_cf_bfnum=1(Z_depth=128)??
+#wr 53 ff 01	# color z-resolution = 1024
+#wr 53 ff 00	# color z-resolution = 512
+wr 53 7f		# color z-resolution = 512
+wr 01 01		# tx_en output triggered by negative(1) or positive(0) edge
+
+#wr 92 38		# reg_cf_bfout_sline=56, bfbb output
+wr 93 00		# reg_cf_bfout_st=0
+wr 8D 01		# reg_cf_cfout7_inv=1
+
+##################################################
+# reg_tx_en, start firing
+##################################################
+wr 8B 00	# no fast and slow gating
+#wr 15E 05	# reg_rx_apo_hann=1, reg_apobw_trunc=1
+#wr 1D 03	# reg_rx_data_mix_b=1, reg_rx_data_mix_c=1
+wr 1C4 34
+wr 1C6 52	# reg_cf_skip
+
+#b_iir: Fstop = 0.200000 
+#wr 1CD 20 BF 01
+#wr 1D0 00 2E 03
+#wr 1D3 C0 70 02
+#wr 1D6 80 7E 01
+#wr 1D9 A0 6E 03
+#wr 1DC 00 AD 03
+
+#--cheby2--N=4,Fstop=11Mhz,fs=50.00MHz,As=45, follow 53
+wr 1CD 80 3E 01 # iira12 13e80
+wr 1D0 40 5E 03 # iira13 35e40
+wr 1D3 A0 C7 03 # iirb12 3c7a0
+wr 1D6 60 E6 00 # iira22 e660
+wr 1D9 40 C4 03 # iira23 3c440
+wr 1DC 80 4B 01 # iirb22 14b80
+wr 1DF 00 # Gx -5
+
+#c_iir: Fstop = 0.020000
+#wr 1ED 20 FA 01
+#wr 1F0 E0 04 03
+#wr 1F3 C0 19 02
+#wr 1F6 C0 F1 01
+#wr 1F9 C0 0D 03
+#wr 1FC 00 05 02
+#wr 1FF 0A		# c_mode iir output shift
+wr 1ED 40 F2 01 # iira12 1f240
+wr 1F0 A0 09 03 # iira13 309a0
+wr 1F3 A0 13 02 # iirb12 213a0
+wr 1F6 A0 E3 01 # iira22 1e3a0
+wr 1F9 E0 1A 03 # iira23 31ae0
+wr 1FC 20 60 02 # iirb22 26020
+wr 1FF 05 # Gx -6
+#wr 5E data
+#wr 5D addr
+wr 5E 80
+wr 5D 6B # wr_gs(PWR_MGMT_1, 0x80);
+wr 5E 1
+wr 5D 6B # wr_gs(PWR_MGMT_1, 0x01);
+#wr 5E 7
+#wr 5D 6C # wr_gs(PWR_MGMT_2, 0x07);
+wr 5E 3
+wr 5D 1A # wr_gs(CONFIG, 0x3);
+wr 5E 3
+wr 5D 1D # wr_gs(ACCEL_CONFIG2, 0x03);
+wr 5E 20
+wr 5D 37 # wr_gs(INT_PIN_CFG, 0x20);
+wr 5E 40
+wr 5D 38 # wr_gs(INT_ENABLE, 0x40);
+wr 5E C0
+wr 5D 69 # wr_gs(MOT_DETECT_CTRL, 0xC0);
+wr 5E 3
+wr 5D 1F # wr_gs(WOM_THR, 0x03);
+wr 60 8F
+wr 61 FF
+#wr 61 7F
+#wr 62 CF
+wr 62 99
+wr 2AC 1
+##### for CF with poly-regression wall filter #####
+wr 245 00
+wr 179 00			# reg_cf_persistence; 0: 1 frame, 1: 2 frames, 2: 3 frames
+wr 246 00 00		# reg_cf_adaptive_start_addr
+#wr AC 00 FF FF FF	# reg_cf_lthreshold
+#wr A8 00 00 00 00	# reg_cf_uthreshold
+#wr 173 FF			# reg_cf_B_T = B_T*8
+wr 17C CF			# reg_cf_variance_n
+wr 17B FF			# reg_cf_variance_m
+
+### for bmode angle/fireblk and cf fireblk from registers ###
+#new compound strategy, which can support 13 angle
+wr 220 0 B E 9 10 7 12 5
+wr 228 14 3 16 1 18 C A D
+wr 230 F 8 11 6 13 4 15 2
+wr 238 17
+
+wr 34E 01   # reg_trx_fireblk_step; 1: fireblk use rx20A-D; 0:fireblk use rx210-21F
+wr 20A 10	# reg_bmode_fireblk_init; initial of bmode firing block
+wr 20C 20   # reg_bmode_fireblk_step; step of bmode firing block
+wr 20E 03   # reg_bmode_fireblk; number of bmode firing block
+
+wr 20B 30   # reg_cf_fireblk_init; initial of cf firing block
+wr 20D 20   # reg_cf_fireblk_step; step of cf firing block
+wr 20F 01   # reg_cf_fireblk; number of cf firing block
+
+
+####################################################
+# tx7332 initialization
+####################################################
+wr 3B0 1F		# tail_count
+wr 3B1 07		# spi freq_en/cycle_en
+wr 3B2 00		# spi bfsync/tr_en enable
+wr 3B3 00		# reg_tx_tr_en_timing[2]=tr_en timing after tx_start; [1:0] bfsync_timing=1
+wr 3B4 01		# dynamic power mode
+
+wr 3B6 0F		# b[3] spi200; b[1:0] spi cs enable, spi sclk output 200m
+#wr 3B6 07		# b[3] spi100; b[1:0] spi cs enable, spi sclk output 100m
+
+# tx_rstn release
+wr 3B7 1F		# b[4:3] tx_rstn, b[2] tx_clk output, b[1]=1 tx_clk=160m, b[1]=0 tx_clk=200m
+#wr 3B7 1C		# b[4:3] tx_rstn, b[2] tx_clk output, b[1]=1 tx_clk=160m, b[1]=0 tx_clk=200m
+wait 1			# wait for 1ms
+
+### tx7332 register programming
+# reg0: d[0] reset;d[8] burst_wr_en = 1 for spi burst; d[3] load_prof=1 for every firing to load profile for firing
+wr 3B8 04 00 00 00 01 00 00 00	# tx spi data
+wait 1				# wait for 1ms
+
+# reg0: d[0] reset;d[8] burst_wr_en = 1 for spi burst; d[3] load_prof=1 for every firing to load profile for firing
+wr 3B8 04 00 00 00 00 01 00 00	# tx spi data
+wait 1				# wait for 1ms
+
+# reg1: d[16]/[0] stndby_G1/G2, 0=normal operation, 1=standby all the group 1/2 channels
+wr 3B8 04 01 00 00 00 00 00 00	# tx spi data
+wait 1				# wait for 1ms
+
+# reg06/0f for dynamic/default power mode selection; reg06[4]/reg0f[4]
+# dis_dyn_cntrl_1/2 = 1'b1 for default power mode if tr_en is not connected to
+# fpga. and 0: tr_en connect to fpga for dynamic power mode
+#wr 3B8 04 06 00 00 10 00 00 00	# tx spi data, default power mode
+wr 3B8 04 06 00 00 00 00 00 00	# tx spi data, dynamic power mode
+wait 1				# wait for 1ms
+
+#wr 3B8 04 0F 00 00 10 00 00 00	# tx spi data, default power mode
+wr 3B8 04 0F 00 00 00 00 00 00	# tx spi data, dynamic power mode
+wait 1				# wait for 1ms
+
+# reg0b/14 for LDO_MODE_G1/G2, d[25:22]='b0000 in default power mode.
+# d[25-22]='b1111 in high power mode. Don't use other combination.
+wr 3B8 04 0b 00 00 00 00 00 00	# tx spi data
+wait 1				# wait for 1ms
+
+wr 3B8 04 14 00 00 00 00 00 00	# tx spi data
+wait 1				# wait for 1ms
+
+# reg0c[29:24][21:16][13:8][5:0] tr_sw_off_del_g2/1/4/3
+#wr 3B8 04 0C 00 00 3f 3f 3f 3f	# tx spi data, max delay
+wr 3B8 04 0C 00 00 00 00 00 00	# tx spi data, min delay
+wait 1				# wait for 1ms
+
+# reg15[27:16]/[11:0] TR_SW_DEL_G2/G4, for tr_sw_del = 64
+#wr 3B8 04 15 00 00 1a 00 1a 00	# tx spi data
+wr 3B8 04 15 00 00 00 00 00 00	# tx spi data
+wait 1				# wait for 1ms
+
+# reg16[31:28]/[15:12] BF_PROF_SEL_G1/G2
+# reg16[27:16]/[11:00] TR_SW_DEL_G1/G3, for tr_sw_del = 64
+#wr 3B8 04 16 00 00 1a 00 1a 00	# tx spi data
+wr 3B8 04 16 00 00 00 00 00 00	# tx spi data
+wait 1				# wait for 1ms
+
+# reg17[10][9] rdn_clk_sync_1/2 for dynamic power/transmit less power mode
+#b31-11	: must write 0
+#b10    : PDN_CLK_SYNC_1, 0=Normal operation;  1=Power-down clock and sync buffer for die 1
+#b9     : PDN_CLK_SYNC_2, 0=Normal operation;  1=Power-down clock and sync buffer for die 2
+#b8-5   : Must write 0
+#b4     : DRV_MUS_SEL, 0=transistor's current is controlled by DSEL_0/1 pins, 1=controlled by DRV_SEL
+#b3-2   : DRV_SEL, 00=1A, 01=0.75A, 10=0.5A, 11=0.25A
+#b1     : en_resync_mux_sel
+#b0     : en_resync
+#wr 3B8 04 17 00 00 1F 00 00 00	# DRV_SEL=0.25A; en_resysnc_mux_sel=1; en_resync=1;
+#wr 3B8 04 17 00 00 1B 00 00 00	# DRV_SEL=0.5A;  en_resysnc_mux_sel=1; en_resync=1;
+#wr 3B8 04 17 00 00 17 00 00 00	# DRV_SEL=0.75A; en_resysnc_mux_sel=1; en_resync=1;
+wr 3B8 04 17 00 00 13 00 00 00	# DRV_SEL=1A; en_resysnc_mux_sel=1; en_resync=1;
+wait 1				# wait for 1ms
+
+# reg18[26:18] tx_start_del='d35(2us/bf_clk=tx_del=400=8*tx_start_del+121) or 'd40='h28
+# reg18[17:16] CW_WAVE_MODE, 00=Bipolar CW; 01=Only positive polarity; 10=Only negative polarity; 00=Don't use
+# reg18[15] CW_EN_MUX_SEL, 0=CW mode enable through pin; 1=through register bit 24[14:13]
+# reg18[14]/[13] CW_EN_1/2
+# reg18[11:9] CW_DAMP_CNT, CW wave damp duration.
+# reg18[6] PAT_INV
+# reg18[5:3] clk_div
+# reg18[1] TR_SW_DEL_MODE, 0=TR switch turn on delay is conunted from TR_BF_SYNC pulse;
+# 						   1=TR switch turn on delay is conunted from last pulse transmission.
+# 4 * tr_sw_del + 8 * tx_start_del + 117,	if tr_swl_del_mode=0
+# 4 * tr_sw_del + 5 + 2^clk_div	,			if tr_swl_del_mode=1
+# reg18[0] TX_BF_MODE, 0=Off-chip BF; 1=On-chip BF
+# reg18[1:0]='b11 : tr_sw_del_mode=1 and tx_bf_mode=1 for on-chip bf
+#wr 3B8 04 18 00 00 03 00 0C 02	# tx spi data, b1=tr_sw_del_mode after firing
+wr 3B8 04 18 00 00 03 00 8C 00	# tx spi data, b1=tr_sw_del_mode after firing
+#wr 3B8 04 18 00 00 01 00 8C 00	# tx spi data, b1=tr_sw_del_mode after bfsync
+#wr 3B8 04 18 00 00 01 00 8C 01	# tx spi data
+wait 1				# wait for 1ms

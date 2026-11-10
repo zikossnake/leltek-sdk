@@ -1,0 +1,59 @@
+<Linear 0>
+alphaSlow = 0.0;
+alphaFast = 0.0;
+slowThreshold = 0.3;
+fastThreshold = 0.5;
+
+<Linear 1>
+alphaSlow = 0.25;
+alphaFast = 0.1;
+slowThreshold = 0.3;
+fastThreshold = 0.5;
+
+<Linear 2>
+alphaSlow = 0.35;
+alphaFast = 0.1;
+slowThreshold = 0.3;
+fastThreshold = 0.5;
+
+<Linear 3>
+alphaSlow = 0.45;
+alphaFast = 0.1;
+slowThreshold = 0.3;
+fastThreshold = 0.5;
+
+<Linear 4>
+alphaSlow = 0.55;
+alphaFast = 0.1;
+slowThreshold = 0.3;
+fastThreshold = 0.5;
+
+<Curve 0>
+alphaSlow = 0.0;
+alphaFast = 0.0;
+slowThreshold = 0.3;
+fastThreshold = 0.5;
+
+<Curve 1>
+alphaSlow = 0.2;
+alphaFast = 0.0;
+slowThreshold = 0.3;
+fastThreshold = 0.5;
+
+<Curve 2>
+alphaSlow = 0.3;
+alphaFast = 0.0;
+slowThreshold = 0.3;
+fastThreshold = 0.5;
+
+<Curve 3>
+alphaSlow = 0.4;
+alphaFast = 0.0;
+slowThreshold = 0.3;
+fastThreshold = 0.5;
+
+<Curve 4>
+alphaSlow = 0.5;
+alphaFast = 0.0;
+slowThreshold = 0.3;
+fastThreshold = 0.5;

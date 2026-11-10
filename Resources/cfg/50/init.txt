@@ -1,0 +1,315 @@
+wr 26C 1 # reg_hw_fan_ctl=1
+wr 252 0 # reg_afe_adc_on[3:0]=0
+wr 242 FF 0
+wr 36 1 # reg_tx_pattern_simple_angle=1
+#wr 97 50
+#wr 59 01 # power control    # vpp_en
+#wait 20 # wait for 20ms
+#wr 59 03 # power control    # vnn_en
+#wait 20 # wait for 20ms
+
+#wr 59 04 # power control    # vcc5_4v75_en
+#wait 20 # wait for 20ms
+#wr 59 0c # power control    # tvcc_5v_en
+#wait 20 # wait for 20ms
+
+#wr 59 1f # power control    # vee_en
+#wait 20 # wait for 20ms
+
+#wr 59 2c # power control    # trx_3v3_en
+#wait 20 # wait for 20ms
+#wr 59 6c # power control    # hv_5v_en
+#wait 20 # wait for 20ms
+wr 59 ec # power control    # avdd_1v8_en
+wait 20 # wait for 20ms
+
+
+#wr 5A 09 # power control    # ovdd_1v8_en
+#wait 20 # wait for 20ms
+wr 5A 0b # power control    # trx_5v3_en
+wait 20 # wait for 20ms
+wr 5A 0f # power control    # afe_spi_en
+wait 20 # wait for 20ms
+#wr 5A 0f # power control    # wifi_3v3_en
+#wait 20 # wait for 20ms
+
+wr 5B 0
+wr 5B 4
+wr FD 85
+wr 5B 0
+
+#wr 58 24	# vpp/vnn ctrl 30V:'h24 20V:'h12
+
+wait 20 # wait for 20ms
+
+wr 59 ed # power control    # vpp_en
+wait 20 # wait for 20ms
+
+wr 59 ef # power control    # vnn_en
+wait 20 # wait for 20ms
+wr 59 ff # power control    # vee_en
+wait 20 # wait for 20ms
+
+
+wr F4 0    # clock stop
+#wr FC 9    # no clock stop, keep dynamic tmod0 to fix the peak current, shutdown AFE
+
+	##################################################
+	# afe setting
+	##################################################
+wr 00 82
+#wr FA 01	# TCC1 current = 1.5A
+wr FA 00	#
+wr A1 FF	# afe_spi_en
+###Maxim AFE command write register RX4~RXB
+
+#wr 04 1A 00 00 00 00 08 08 10   #PLL 39~50M, VGA mode 1010
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 10 00 00 00 04 08 08 10   #enable clock in termination
+#wr 04 5C 00 00 00 0A 08 08 10   #in 2 100om, LNA 18.5db, AAF 18M, CWD lowpw
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 AE 00 00 00 10 08 08 10   #Initiates transfer of data in ADC registers 0Ah to 0Fh to AFE
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 00 00 00 00 10 08 08 10   #Complete transfer of data in ADC registers 0Ah to 0Fh to AFE
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 00 00 00 00 70 08 10 20   #enable external DAC TGC control chip
+
+
+#wr 04 1A 00 00 00 00 08 08 10   #PLL 39~50M, VGA mode 1010
+#wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+#wr 04 10 00 00 00 04 08 08 10   #enable clock in termination
+#wr 04 AA 00 00 00 07 08 08 10   #in 2 100om, LNA 18.5db, AAF 18M, CWD lowpw
+##wr 04 00 00 00 00 07 08 08 10   #
+##wr 04 00 00 00 00 08 08 08 10   #
+##wr 04 00 00 00 00 09 08 08 10   #
+#wr 04 5C 00 00 00 0A 08 08 10   #in 2 100om, LNA 18.5db, AAF 18M, CWD lowpw
+#wr 04 AE 00 00 00 10 08 08 10   #Initiates transfer of data in ADC registers 0Ah to 0Fh to AFE
+#wait 2				# wait for 2ms > 50 x 80ns
+#wr 04 00 00 00 00 10 08 08 10   #Complete transfer of data in ADC registers 0Ah to 0Fh to AFE
+#wr 04 00 00 00 00 70 08 10 20   #enable external DAC TGC control chip
+
+#wr 04 1A 00 00 00 00 08 08 10   #PLL 39~50M, VGA mode 1010
+wr 04 10 00 00 00 00 08 08 10   #PLL 39~50M, VGA mode 1010
+wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+wr 04 10 00 00 00 04 08 08 10   #enable clock in termination
+wr 04 AA 00 00 00 07 08 08 10   # enable high pass filter
+#wr 04 00 00 00 00 07 08 08 10   # disable high pass filter
+#wr 04 D8 00 00 00 0A 08 08 10   #in 2 500om, LNA 18.5db, 2019-04-28 Paul
+wr 04 58 00 00 00 0A 08 08 10   #in 2 200om, LNA 18.5db, 2019-04-28 Paul
+#wr 04 98 00 00 00 0A 08 08 10   #in 2 100om, LNA 18.5db, AAF 18M, 2019-04-28 Paul
+#wr 04 18 00 00 00 0A 08 08 10   #in 2 50om, LNA 18.5db, AAF 18M, 2019-04-28 Paul
+wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+wr 04 AE 00 00 00 10 08 08 10   #Initiates transfer of data in ADC registers 0Ah to 0Fh to AFE
+wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+wr 04 00 00 00 00 10 08 08 10   #Complete transfer of data in ADC registers 0Ah to 0Fh to AFE
+wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+wr 04 03 00 00 00 01 08 08 10   #2's complement,MSB first, center align
+wr 04 00 00 00 00 70 08 10 20   #enable external DAC TGC control chip
+
+	##################################################
+	# clock/power related register setting
+	##################################################
+#wr F0 01    # clk_adc = 25mhz
+wr F0 00    # clk_adc = 50mhz
+wr F4 af    # clock stop
+wr F5 29    # afe_power_ctrl
+wr F6 15    # afe_power_ctrl, 50MHz
+#wr F6 00 00    # afe_adc_power_ctrl
+#wr F8 00 00    # afe_amp_power_ctrl
+	##################################################
+	# control : prf/tgc related register setting
+	##################################################
+wr 38 00	# reg_xdc_type, should be by host, removed??
+wr 2C a0    # afe prf
+#wr 2D 04    # cf prf
+#wr 2D 06    # cf prf
+#wr 2D 09    # cf prf
+#wr 2D 02    # cf prf
+#wr 2E 09    # bmode prf
+#wr 2E 04    # bmode prf
+#wr 2E 03    # bmode prf
+#wr 206 1    # reg_trx_chk_rxcyc = 1
+wr 16 A2 00	# b mode tgc interval
+wr 18 A2 00	# b mode tgc interval
+#wr 3A 02	# b1=upsample2 for linear only
+wr 3B 1		# b1=sidecomp for bf data
+wr 3F 50
+wr 32 00
+#wr 8E 8c 02	# firing per frame (12Hz)
+#wr 8E 00 01	# firing per frame (12Hz)
+#wr 8E 80 01	# firing per frame
+#wr 8E b6 02	# firing per frame
+#wr 8E A6 0	# firing per frame = 167 (30 fps)
+wr 95 01	# 0: adc start from lvds async delay one more T
+#wr 34 5B
+#wr 35 5B
+#wr 90 00
+
+	##################################################
+	# bmode related register setting
+	##################################################
+#wr 81 10	# 2019-06-25
+#wr 86 0c	# reg_rx_lastangle = 12
+#wr 86 18	# reg_rx_lastangle = 24
+#wr 86 13	# reg_rx_lastangle = 19, 20 firings
+#wr 8A 44	# bmode blog init for lna=18db to 44 for convex
+wr 8A 22	# for max2082 adc12b
+
+	##################################################
+	# cf related register setting
+	##################################################
+wr 80 0		# B/C mode
+#wr 88 81	# wall filter
+wr 88 92	# wall filter
+wr 8B 30	# b[5:4] = zgating, b[3:0] = cf_cntdop1(accumulate firing)
+wr 8C 07	# b2= rx hpf, b1=cf apo, b0=bmode apo, b4=slow apo(for convex)
+wr A8 00 10 00 00	# cf amp sensitivity shreshold
+#wr A8 10 00 00 00	# cf amp sensitivity shreshold
+#wr AC 15 00 00 00	# cf auto sensitivity shreshold
+wr AC 0D 00 00 00	# cf auto sensitivity shreshold
+wr B0 20		# b[5] ref_cf_amp_check
+#wr D0 D4 01 28 03	# adc hpf for cf a2/a3 fc=0.02*50M=1M
+wr D0 E0 00 00 00	# adc hpf for cf a2/a3 fc=0.02*50M=1M, 1st order
+wr D8 D4 01 28 03	# adc hpf for bmode a2/a3 fc=0.02*50M=1M
+wr D4 90 01 5C 03	# wf a2/a3 fc=0.05
+wr E0 03	# tx_pattern for pw, imgblock
+wr E2 1f	# tx_pattern for pw, tx table 31
+#wr E4 00	# tx_pattern for cf, angle=0
+wr E3 36	# tx_pattern for pw, 3=4cycles; e=18cycles;c=360ns
+wr E5 36	# tx_pattern for cf, 3=4cycles; e=18cycles;c=360ns
+wr E6 66	# rx_pattern for cf, 6=10cycles;c=200ns
+wr E8 7     # reg_tx_pattern_bmode_freq_en=1, reg_tx_pattern_bmode_cycles_en=1, reg_tx_pattern_bmode_angle_en=1
+wr EA 0     # B mode tx 1 cycle
+#wr EB 32    # Fc = 8.3MHz
+
+#wr 33 02 01 #2020-06-03 update according to min's experiment
+wr 33 D0 #2020-11 update according to min's experiment
+#wr 33 C8
+	##################################################
+	# host related register setting
+	##################################################
+#wr 3D FF 01	# reg_bmod_len??
+wr 3D FF 0	# reg_bmod_len??
+#wr 3D FF 0	# reg_bmod_len??
+#wr 3D 00 01	# reg_bmod_len??
+#wr 3D FE 01	# reg_bmod_len??
+wr 55 01	# reg_cf_bfnum=1(Z_depth=128)??
+#wr 53 ff 1	# color z-resolution = 1024
+#wr 53 ff	# color z-resolution = 512
+wr 53 7f	# color z-resolution = 512
+wr 01 3		# tx_en output triggered by negative(1) or positive(0) edge, reg_tx_inv=1
+
+
+#wr 92 38	# reg_cf_bfout_sline=56, bfbb output
+wr 93 0		# reg_cf_bfout_st=0
+wr 8D 1		# reg_cf_cfout7_inv=1
+	##################################################
+	# reg_tx_en, start firing
+	##################################################
+#wr 162 0 # reg_bmode_decimation=0 (baseCount 8),  reg_cmode_decimation=1(baseCount 16)
+#wr 164 97 # reg_bmode_decimation=0 (baseCount 8),  reg_cmode_decimation=1(baseCount 16)
+wr 8B 0 # no fast and slow gating
+#wr 15E 5 # reg_rx_apo_hann=1, reg_apobw_trunc=1
+wr 1D 3 # reg_rx_data_mix_b=1, reg_rx_data_mix_c=1
+wr 1C6 10 # reg_cf_skip=0x10
+#--cheby2--N=4,Fstop=4.200000e+00Mhz,fs=50.00MHz,As=45
+wr 1CD A0 CB 01 # iira12 1cba0
+wr 1D0 00 27 03 # iira13 32700
+wr 1D3 A0 50 02 # iirb12 250a0
+wr 1D6 60 92 01 # iira22 19260
+wr 1D9 00 60 03 # iira23 36000
+wr 1DC A0 54 03 # iirb22 354a0
+wr 1DF 06 # Gx -7
+#--ellip--N=4,Fstop=1Mhz,fs=50.00MHz,Rp=0.5As=50
+wr 1ED 40 F2 01 # iira12 1f240
+wr 1F0 A0 09 03 # iira13 309a0
+wr 1F3 A0 13 02 # iirb12 213a0
+wr 1F6 A0 E3 01 # iira22 1e3a0
+wr 1F9 E0 1A 03 # iira23 31ae0
+wr 1FC 20 60 02 # iirb22 26020
+wr 1FF 05 # Gx -6
+#wr 5E data
+#wr 5D addr
+wr 5E 80
+wr 5D 6B # wr_gs(PWR_MGMT_1, 0x80);
+wr 5E 1
+wr 5D 6B # wr_gs(PWR_MGMT_1, 0x01);
+#wr 5E 7
+#wr 5D 6C # wr_gs(PWR_MGMT_2, 0x07);
+wr 5E 3
+wr 5D 1A # wr_gs(CONFIG, 0x3);
+wr 5E 3
+wr 5D 1D # wr_gs(ACCEL_CONFIG2, 0x03);
+wr 5E 20
+wr 5D 37 # wr_gs(INT_PIN_CFG, 0x20);
+wr 5E 40
+wr 5D 38 # wr_gs(INT_ENABLE, 0x40);
+wr 5E C0
+wr 5D 69 # wr_gs(MOT_DETECT_CTRL, 0xC0);
+wr 5E 3
+wr 5D 1F # wr_gs(WOM_THR, 0x03);
+wr 60 8F
+wr 61 FF
+#wr 61 7F
+#wr 62 CF
+wr 62 99
+wr 2AC 1
+#wr 66 19
+#wr 67 18
+#wr 1C2 2
+#wr 1C2 4
+#wr 245 1
+#wr 246 19 0
+#wr 248 3
+#wr 249 4
+#wr 24A 2
+#wr 24B 80
+#wr FC 2e
+wr FC 26
+#wr 13 6
+#wr 166 7
+# for CF with poly-regression wall filter
+#wr 245 0
+wr 179 1 # reg_cf_persistence; 0: 1 frame, 1: 2 frames, 2: 3 frames
+#wr 246 0 0 # reg_cf_adaptive_start_addr
+#wr 173 FF # reg_cf_B_T = B_T*8
+#wr AC 0 FF FF FF # reg_cf_lthreshold
+#wr A8 0 0 0 0 # reg_cf_uthreshold
+wr 17C AF # reg_cf_variance_n
+wr 17B FF # reg_cf_variance_m
+#new compound strategy, which can support 13 angle
+wr 220 0 B E 9 10 7 12 5
+wr 228 14 3 16 1 18 C A D
+wr 230 F 8 11 6 13 4 15 2
+wr 238 17
+#wr 220 c d b e a f 9 10
+#wr 228 8 11 7 12 6 13 5 14
+#wr 230 4 15 3 16 2 17 1 18
+#wr 238 0
+wr 26F 2
+wr 351 5
+#wr 34E 1 # reg_trx_fireblk_step=1
+wr 207 00 7
+#wr 209 1
+wr 165 0 # no box filter in MP filtering, 2019-04 Paul
+wr 290 00 10 00 10 00 30 00 30 # Focus 8 compound weight
+wr 298 00 30 00 30 00 10 00 10 # Focus 8 compound weight
+wr 2A0 46 0 # reg_transition_step = 46
+wr 2A2 53 0 # reg_focal_zone_step = 53

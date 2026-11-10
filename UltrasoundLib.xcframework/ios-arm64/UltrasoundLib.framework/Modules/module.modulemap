@@ -1,0 +1,6 @@
+framework module UltrasoundLib {
+  umbrella header "UltrasoundLib.h"
+  export *
+
+  module * { export * }
+}
